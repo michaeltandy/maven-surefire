@@ -1,0 +1,8 @@
+language: java
+os:
+- linux
+- osx
+
+script:
+- mvn clean install --batch-mode
+
