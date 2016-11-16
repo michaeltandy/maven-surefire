@@ -391,6 +391,8 @@
                   <exclude>README.md</exclude>
                   <exclude>.gitignore</exclude>
                   <exclude>.git/**/*</exclude>
+                  <exclude>appveyor.yml</exclude>
+                  <exclude>.travis.yml</exclude>
                   <exclude>**/.idea</exclude>
                   <exclude>**/.svn/**/*</exclude>
                   <exclude>**/*.iml</exclude>
