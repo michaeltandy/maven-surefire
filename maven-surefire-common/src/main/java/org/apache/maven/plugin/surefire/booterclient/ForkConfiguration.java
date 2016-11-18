@@ -277,7 +277,7 @@ public class ForkConfiguration
         {
             jos.setLevel( JarOutputStream.STORED );
             JarEntry je = new JarEntry( "META-INF/MANIFEST.MF" );
-            jos.putNextEntry( je );
+            jos.putNextEntry( je ); // asdfqwer
 
             Manifest man = new Manifest();
 

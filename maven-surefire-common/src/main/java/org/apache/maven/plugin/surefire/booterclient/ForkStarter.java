@@ -19,6 +19,12 @@ package org.apache.maven.plugin.surefire.booterclient;
  * under the License.
  */
 
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.lambda.AWSLambdaClient;
+import com.amazonaws.services.lambda.invoke.LambdaInvokerFactory;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import org.apache.maven.plugin.surefire.CommonReflector;
 import org.apache.maven.plugin.surefire.StartupReportConfiguration;
 import org.apache.maven.plugin.surefire.SurefireProperties;
@@ -28,10 +34,8 @@ import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.OutputStre
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessInputStream;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestProvidingInputStream;
 import org.apache.maven.plugin.surefire.booterclient.output.ForkClient;
-import org.apache.maven.plugin.surefire.booterclient.output.NativeStdErrStreamConsumer;
 import org.apache.maven.plugin.surefire.booterclient.output.ThreadedStreamConsumer;
 import org.apache.maven.plugin.surefire.report.DefaultReporterFactory;
-import org.apache.maven.shared.utils.cli.CommandLineCallable;
 import org.apache.maven.shared.utils.cli.CommandLineException;
 import org.apache.maven.surefire.booter.Classpath;
 import org.apache.maven.surefire.booter.ClasspathConfiguration;
@@ -53,7 +57,7 @@ import org.apache.maven.surefire.util.DefaultScanResult;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
@@ -84,7 +88,8 @@ import static org.apache.maven.plugin.surefire.booterclient.ForkNumberBucket.dra
 import static org.apache.maven.plugin.surefire.booterclient.ForkNumberBucket.returnNumber;
 import static org.apache.maven.plugin.surefire.booterclient.lazytestprovider.TestLessInputStream
     .TestLessInputStreamBuilder;
-import static org.apache.maven.shared.utils.cli.CommandLineUtils.executeCommandLineAsCallable;
+import org.apache.maven.plugin.surefire.broadside.BundleMaker;
+import org.apache.maven.plugin.surefire.broadside.TestOnLambda;
 import static org.apache.maven.shared.utils.cli.ShutdownHookUtils.addShutDownHook;
 import static org.apache.maven.shared.utils.cli.ShutdownHookUtils.removeShutdownHook;
 import static org.apache.maven.surefire.booter.Classpath.join;
@@ -95,8 +100,9 @@ import static org.apache.maven.surefire.suite.RunResult.SUCCESS;
 import static org.apache.maven.surefire.util.internal.ConcurrencyUtils.countDownToZero;
 import static org.apache.maven.surefire.util.internal.DaemonThreadFactory.newDaemonThread;
 import static org.apache.maven.surefire.util.internal.DaemonThreadFactory.newDaemonThreadFactory;
-import static org.apache.maven.surefire.util.internal.StringUtils.FORK_STREAM_CHARSET_NAME;
 import static org.apache.maven.surefire.util.internal.StringUtils.requireNonNull;
+import uk.me.mjt.broadside.TestResult;
+import uk.me.mjt.broadside.TestSettings;
 
 /**
  * Starts the fork or runs in-process.
@@ -256,11 +262,12 @@ public class ForkStarter
         Properties sysProps = startupReportConfiguration.getTestVmSystemProperties();
         ForkClient forkClient = new ForkClient( forkedReporterFactory, sysProps, stream, log );
         Thread shutdown = createImmediateShutdownHookThread( builder, providerConfiguration.getShutdown() );
+        final String s3BundleUrl = new BundleMaker().makeUploadToS3(startupConfiguration, forkConfiguration);
         ScheduledFuture<?> ping = triggerPingTimerForShutdown( builder );
         try
         {
             addShutDownHook( shutdown );
-            return fork( null, props, forkClient, effectiveSystemProperties, stream, false );
+            return fork( null, props, forkClient, effectiveSystemProperties, stream, false, s3BundleUrl );
         }
         finally
         {
@@ -313,6 +320,7 @@ public class ForkStarter
 
         ScheduledFuture<?> ping = triggerPingTimerForShutdown( testStreams );
         Thread shutdown = createShutdownHookThread( testStreams, providerConfiguration.getShutdown() );
+        final String s3BundleUrl = new BundleMaker().makeUploadToS3(startupConfiguration, forkConfiguration);
 
         try
         {
@@ -345,7 +353,7 @@ public class ForkStarter
                         };
 
                         return fork( null, new PropertiesWrapper( providerConfiguration.getProviderProperties() ),
-                                 forkClient, effectiveSystemProperties, testProvidingInputStream, true );
+                                 forkClient, effectiveSystemProperties, testProvidingInputStream, true, s3BundleUrl );
                     }
                 };
                 results.add( executorService.submit( pf ) );
@@ -367,7 +375,7 @@ public class ForkStarter
             notifiableTestStream.skipSinceNextTest();
         }
     }
-
+    
     @SuppressWarnings( "checkstyle:magicnumber" )
     private RunResult runSuitesForkPerTestSet( final SurefireProperties effectiveSystemProperties, int forkCount )
         throws SurefireBooterForkException
@@ -379,8 +387,9 @@ public class ForkStarter
         final TestLessInputStreamBuilder builder = new TestLessInputStreamBuilder();
         ScheduledFuture<?> ping = triggerPingTimerForShutdown( builder );
         Thread shutdown = createCachableShutdownHookThread( builder, providerConfiguration.getShutdown() );
-        try
-        {
+        final String s3BundleUrl = new BundleMaker().makeUploadToS3(startupConfiguration, forkConfiguration);
+        
+        try {
             addShutDownHook( shutdown );
             int failFastCount = providerConfiguration.getSkipAfterFailureCount();
             final AtomicInteger notifyStreamsToSkipTestsJustNow = new AtomicInteger( failFastCount );
@@ -412,7 +421,7 @@ public class ForkStarter
                         {
                             return fork( testSet,
                                          new PropertiesWrapper( providerConfiguration.getProviderProperties() ),
-                                         forkClient, effectiveSystemProperties, stream, false );
+                                         forkClient, effectiveSystemProperties, stream, false, s3BundleUrl );
                         }
                         finally
                         {
@@ -485,30 +494,47 @@ public class ForkStarter
 
     private RunResult fork( Object testSet, KeyValueSource providerProperties, ForkClient forkClient,
                             SurefireProperties effectiveSystemProperties,
-                            AbstractForkInputStream testProvidingInputStream, boolean readTestsFromInStream )
+                            AbstractForkInputStream testProvidingInputStream, boolean readTestsFromInStream ,
+                            final String s3BundleUrl)
         throws SurefireBooterForkException
     {
         int forkNumber = drawNumber();
         try
         {
             return fork( testSet, providerProperties, forkClient, effectiveSystemProperties, forkNumber,
-                         testProvidingInputStream, readTestsFromInStream );
+                         testProvidingInputStream, readTestsFromInStream, s3BundleUrl );
         }
         finally
         {
             returnNumber( forkNumber );
         }
     }
+    
+    private final AWSLambdaClient lambda = new AWSLambdaClient().withRegion(Regions.EU_WEST_1);
+    private final TestOnLambda lambdaService = LambdaInvokerFactory.builder()
+            .lambdaClient(lambda).build(TestOnLambda.class);
 
     private RunResult fork( Object testSet, KeyValueSource providerProperties, ForkClient forkClient,
                             SurefireProperties effectiveSystemProperties, int forkNumber,
-                            AbstractForkInputStream testProvidingInputStream, boolean readTestsFromInStream )
+                            AbstractForkInputStream testProvidingInputStream, boolean readTestsFromInStream,
+                            final String s3BundleUrl)
         throws SurefireBooterForkException
     {
         final File surefireProperties;
         final File systPropsFile;
+        final TestSettings ts;
         try
         {
+            if (s3BundleUrl == null) throw new NullPointerException("s3BundleUrl unexpectedly null?");
+            SurefireProperties testProperties = BooterSerializer.generateProperties(
+                    new PropertiesWrapper(providerConfiguration.getProviderProperties()),
+                    providerConfiguration, startupConfiguration, testSet, false);
+            StringWriter sw = new StringWriter();
+            testProperties.store(sw, "broadside");
+            ts = new TestSettings();
+            ts.setSurefirePropertiesFile(sw.toString());
+            ts.setTestCodeBundle(s3BundleUrl);
+
             BooterSerializer booterSerializer = new BooterSerializer( forkConfiguration );
 
             surefireProperties = booterSerializer.serialize( providerProperties, providerConfiguration,
@@ -532,7 +558,7 @@ public class ForkStarter
         {
             throw new SurefireBooterForkException( "Error creating properties files for forking", e );
         }
-
+        
         // this could probably be simplified further
         final Classpath bootClasspathConfiguration = startupConfiguration.isProviderMainClass()
             ? startupConfiguration.getClasspathConfiguration().getProviderClasspath()
@@ -551,6 +577,7 @@ public class ForkStarter
         if ( testProvidingInputStream != null )
         {
             testProvidingInputStream.setFlushReceiverProvider( cli );
+            // TODO figure out what this is for when we fork-per-test.
         }
 
         cli.createArg().setFile( surefireProperties );
@@ -570,14 +597,22 @@ public class ForkStarter
 
         try
         {
-            CommandLineCallable future =
+            /*CommandLineCallable future =
                 executeCommandLineAsCallable( cli, testProvidingInputStream, threadedStreamConsumer,
                                               new NativeStdErrStreamConsumer(), 0, closer,
-                                              Charset.forName( FORK_STREAM_CHARSET_NAME ) );
+                                              Charset.forName( FORK_STREAM_CHARSET_NAME ) );*/
+            TestResult result = lambdaService.performTest(ts);
+            if (result == null) {
+                throw new SurefireBooterForkException( "Null returned by aws lambda?" );
+            }
+            
+            for (String line : result.getSurefireBooterStdout().split("\n")) {
+                threadedStreamConsumer.consumeLine(line);
+            }
+            
+            //currentForkClients.add( forkClient );
 
-            currentForkClients.add( forkClient );
-
-            int result = future.call();
+            /*int result = future.call();
 
             if ( forkClient.hadTimeout() )
             {
@@ -586,13 +621,13 @@ public class ForkStarter
             else if ( result != SUCCESS )
             {
                 throw new SurefireBooterForkException( "Error occurred in starting fork, check output in log" );
-            }
+            }*/
         }
-        catch ( CommandLineException e )
+        /*catch ( CommandLineException e )
         {
             runResult = failure( forkClient.getDefaultReporterFactory().getGlobalRunStatistics().getRunResult(), e );
             throw new SurefireBooterForkException( "Error while executing forked tests.", e.getCause() );
-        }
+        }*/
         finally
         {
             closer.close();

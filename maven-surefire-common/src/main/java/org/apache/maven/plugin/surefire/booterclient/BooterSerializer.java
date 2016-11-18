@@ -73,6 +73,15 @@ class BooterSerializer
                            StartupConfiguration providerConfiguration, Object testSet, boolean readTestsFromInStream )
         throws IOException
     {
+        SurefireProperties properties = generateProperties(sourceProperties, booterConfiguration,
+                providerConfiguration, testSet, readTestsFromInStream);
+        return SystemPropertyManager.writePropertiesFile( properties, forkConfiguration.getTempDirectory(),
+                                                          "surefire", forkConfiguration.isDebug() );
+    }
+    
+    public static SurefireProperties generateProperties( KeyValueSource sourceProperties, ProviderConfiguration booterConfiguration,
+                           StartupConfiguration providerConfiguration, Object testSet, boolean readTestsFromInStream )
+    {
 
         SurefireProperties properties = new SurefireProperties( sourceProperties );
 
@@ -142,11 +151,10 @@ class BooterSerializer
         properties.setNullableProperty( SYSTEM_EXIT_TIMEOUT,
                                               String.valueOf( booterConfiguration.getSystemExitTimeout() ) );
 
-        return SystemPropertyManager.writePropertiesFile( properties, forkConfiguration.getTempDirectory(),
-                                                          "surefire", forkConfiguration.isDebug() );
+        return properties;
     }
 
-    private String getTypeEncoded( Object value )
+    private static String getTypeEncoded( Object value )
     {
         if ( value == null )
         {
