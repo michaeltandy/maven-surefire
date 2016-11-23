@@ -262,7 +262,7 @@ public class ForkStarter
         Properties sysProps = startupReportConfiguration.getTestVmSystemProperties();
         ForkClient forkClient = new ForkClient( forkedReporterFactory, sysProps, stream, log );
         Thread shutdown = createImmediateShutdownHookThread( builder, providerConfiguration.getShutdown() );
-        final String s3BundleUrl = new BundleMaker().makeUploadToS3(startupConfiguration, forkConfiguration);
+        final String s3BundleUrl = new BundleMaker().makeUploadToS3(startupConfiguration, forkConfiguration, providerConfiguration);
         ScheduledFuture<?> ping = triggerPingTimerForShutdown( builder );
         try
         {
@@ -320,7 +320,7 @@ public class ForkStarter
 
         ScheduledFuture<?> ping = triggerPingTimerForShutdown( testStreams );
         Thread shutdown = createShutdownHookThread( testStreams, providerConfiguration.getShutdown() );
-        final String s3BundleUrl = new BundleMaker().makeUploadToS3(startupConfiguration, forkConfiguration);
+        final String s3BundleUrl = new BundleMaker().makeUploadToS3(startupConfiguration, forkConfiguration, providerConfiguration);
 
         try
         {
@@ -387,7 +387,7 @@ public class ForkStarter
         final TestLessInputStreamBuilder builder = new TestLessInputStreamBuilder();
         ScheduledFuture<?> ping = triggerPingTimerForShutdown( builder );
         Thread shutdown = createCachableShutdownHookThread( builder, providerConfiguration.getShutdown() );
-        final String s3BundleUrl = new BundleMaker().makeUploadToS3(startupConfiguration, forkConfiguration);
+        final String s3BundleUrl = new BundleMaker().makeUploadToS3(startupConfiguration, forkConfiguration, providerConfiguration);
         
         try {
             addShutDownHook( shutdown );

@@ -16,28 +16,20 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.*;
 import java.util.zip.*;
 import org.apache.maven.plugin.surefire.booterclient.ForkConfiguration;
+import org.apache.maven.surefire.booter.ProviderConfiguration;
 import org.apache.maven.surefire.booter.StartupConfiguration;
+import org.apache.maven.surefire.testset.TestRequest;
 
 
 public class BundleMaker {
     private static final FileAttribute OWNER_RW_ONLY = PosixFilePermissions.asFileAttribute(
             PosixFilePermissions.fromString("rw-------"));
     
-    public static void main(String[] args) throws IOException {
-        
-        Map<String,File> toPackage = new HashMap();
-        toPackage.put("/foo/asdf.txt", new File("/home/mtandy/Desktop/asdf.txt"));
-        
-        File zipFilesToOutput = zipFilesToOutput(toPackage);
-        System.out.println(zipFilesToOutput.getAbsolutePath());
-        
-        unzipTo(zipFilesToOutput, new File("/home/mtandy/Desktop/unzip"));
-    }
-    
     public String makeUploadToS3(final StartupConfiguration startupConfiguration,
-            final ForkConfiguration forkConfiguration) {
+            final ForkConfiguration forkConfiguration,
+            final ProviderConfiguration providerConfiguration) {
         try {
-            File f = makeBundleInternal(startupConfiguration, forkConfiguration);
+            File f = makeBundleInternal(startupConfiguration, forkConfiguration, providerConfiguration);
             
             AmazonS3 s3Client = new AmazonS3Client();
             PutObjectResult por = s3Client.putObject("broadside-mjt", f.getName(), f);
@@ -58,7 +50,8 @@ public class BundleMaker {
     }*/
     
     private File makeBundleInternal(final StartupConfiguration startupConfiguration,
-            final ForkConfiguration forkConfiguration) throws IOException {
+            final ForkConfiguration forkConfiguration,
+            final ProviderConfiguration providerConfiguration) throws IOException {
         
         SortedSet<String> classpath = generateClasspath(startupConfiguration, forkConfiguration);
         SortedSet<String> directories = findDirectories(classpath);
@@ -83,6 +76,15 @@ public class BundleMaker {
             });
         }
         
+        // Needed for the integration test "CheckTestNgSuiteXmlIT"
+        // (which passes XML files to the surefire booter)
+        TestRequest testSuiteDefinition = providerConfiguration.getTestSuiteDefinition();
+        if ( testSuiteDefinition != null ) {
+            for (File f : testSuiteDefinition.getSuiteXmlFiles()) {
+                fileTargets.put("suiteXml/"+f.getName(), f);
+            }
+        }
+        
         File f = zipFilesToOutput(fileTargets);
         System.out.println(f.getAbsolutePath());
         return f;
@@ -97,6 +99,7 @@ public class BundleMaker {
         if (!startupConfiguration.isProviderMainClass()) {
             classpath.addAll(forkConfiguration.getBootClasspath().getClassPath());
         }
+        
         return classpath;
     }
     
