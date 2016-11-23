@@ -62,7 +62,7 @@ public class BundleMaker {
         final Map<String,File> fileTargets = new TreeMap();
         for (String filename : nonDirectories) {
             File f = new File(filename);
-            fileTargets.put(f.getName(), f);
+            fileTargets.put(f.getName(), f); // TODO warn on duplicates.
         }
         
         for (String dirName : directories) {
