@@ -534,6 +534,7 @@ public class ForkStarter
             ts = new TestSettings();
             ts.setSurefirePropertiesFile(sw.toString());
             ts.setTestCodeBundle(s3BundleUrl);
+            ts.setArglineParameters( forkConfiguration.getArgLineParameters() );
 
             BooterSerializer booterSerializer = new BooterSerializer( forkConfiguration );
 
@@ -591,7 +592,7 @@ public class ForkStarter
         final CloseableCloser closer =
                 new CloseableCloser( threadedStreamConsumer, requireNonNull( testProvidingInputStream, "null param" ) );
 
-        log.debug( "Forking command line: " + cli );
+        log.info( "Forking command line: " + cli );
 
         RunResult runResult = null;
 

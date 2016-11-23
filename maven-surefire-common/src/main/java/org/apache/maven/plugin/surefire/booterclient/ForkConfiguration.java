@@ -19,6 +19,7 @@ package org.apache.maven.plugin.surefire.booterclient;
  * under the License.
  */
 
+import edu.emory.mathcs.backport.java.util.Arrays;
 import org.apache.maven.plugin.surefire.AbstractSurefireMojo;
 import org.apache.maven.plugin.surefire.booterclient.lazytestprovider.OutputStreamFlushableCommandline;
 import org.apache.maven.plugin.surefire.util.Relocator;
@@ -39,6 +40,7 @@ import java.util.Properties;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
+import org.apache.maven.shared.utils.cli.Commandline;
 
 /**
  * Configuration for forking tests.
@@ -143,6 +145,16 @@ public class ForkConfiguration
             ? startupConfiguration.getActualClassName()
             : ForkedBooter.class.getName(), threadNumber );
     }
+    
+    List<String> getArgLineParameters() {
+        Commandline cli = new Commandline();
+        if ( argLine != null )
+        {
+            cli.createArg().setLine(
+                   stripNewLines( replacePropertyExpressions( argLine ) ) );
+        }
+        return Arrays.asList(cli.getArguments());
+    }
 
     OutputStreamFlushableCommandline createCommandLine( List<String> classPath, boolean useJar, boolean shadefire,
                                                         String providerThatHasMainMethod, int threadNumber )
@@ -171,6 +183,7 @@ public class ForkConfiguration
         if ( getDebugLine() != null && !"".equals( getDebugLine() ) )
         {
             cli.createArg().setLine( getDebugLine() );
+            throw new SurefireBooterForkException( "Interactive debugging is impossible with broadside. Sorry." );
         }
 
         if ( useJar )
