@@ -32,6 +32,7 @@ import org.apache.maven.surefire.its.fixture.SurefireJUnit4IntegrationTestCase;
 import org.apache.maven.surefire.its.fixture.SurefireLauncher;
 import org.apache.maven.surefire.its.fixture.TestFile;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -53,6 +54,7 @@ public class ForkModeIT
     }
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkModeAlways()
     {
         String[] pids = doTest( unpack( getProject() ).setForkJvm().forkAlways() );
@@ -62,6 +64,7 @@ public class ForkModeIT
     }
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkModePerTest()
     {
         String[] pids = doTest( unpack( getProject() ).setForkJvm().forkPerTest() );
@@ -71,6 +74,7 @@ public class ForkModeIT
     }
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkModeNever()
     {
         String[] pids = doTest( unpack( getProject() ).forkNever() );
@@ -80,6 +84,7 @@ public class ForkModeIT
     }
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkModeNone()
     {
         String[] pids = doTest( unpack( getProject() ).forkMode( "none" ) );
@@ -89,6 +94,7 @@ public class ForkModeIT
     }
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkModeOncePerThreadSingleThread()
     {
         String[] pids = doTest( unpack( getProject() ).setForkJvm().forkOncePerThread().threadCount( 1 ) );
@@ -98,6 +104,7 @@ public class ForkModeIT
     }
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkModeOncePerThreadTwoThreads()
     {
         String[] pids =
@@ -107,6 +114,7 @@ public class ForkModeIT
     }
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkCountZero()
     {
         String[] pids = doTest( unpack( getProject() ).forkCount( 0 ) );
@@ -125,6 +133,7 @@ public class ForkModeIT
     }
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkCountOneReuse()
     {
         String[] pids = doTest( unpack( getProject() ).setForkJvm().forkCount( 1 ).reuseForks( true ) );
@@ -143,6 +152,7 @@ public class ForkModeIT
     }
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkCountTwoReuse()
     {
         String[] pids =
@@ -172,6 +182,7 @@ public class ForkModeIT
     }
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkModeOnce()
     {
         String[] pids = doTest( unpack( getProject() ).forkOnce() );

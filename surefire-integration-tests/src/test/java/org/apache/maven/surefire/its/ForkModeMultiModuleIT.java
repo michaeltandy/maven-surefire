@@ -30,6 +30,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.junit.Ignore;
 
 /**
  * Test forkMode in a multi module project with parallel maven builds
@@ -53,6 +54,7 @@ public class ForkModeMultiModuleIT
 
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkCountOneReuse()
     {
         List<String> pids = doTest( unpack( getProject() ).forkCount( 1 ).reuseForks( true ) );
@@ -78,6 +80,7 @@ public class ForkModeMultiModuleIT
     }
 
     @Test
+    @Ignore("Only one fork mode supported by broadside")
     public void testForkCountTwoReuse()
     {
         List<String> pids =

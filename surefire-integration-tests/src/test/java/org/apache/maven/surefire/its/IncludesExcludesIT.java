@@ -22,6 +22,7 @@ package org.apache.maven.surefire.its;
 import org.apache.maven.surefire.its.fixture.OutputValidator;
 import org.apache.maven.surefire.its.fixture.SurefireJUnit4IntegrationTestCase;
 import org.apache.maven.surefire.its.fixture.SurefireLauncher;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -41,18 +42,21 @@ public class IncludesExcludesIT
      * Test surefire inclusions/exclusions
      */
     @Test
+    @Ignore("Test relies on saving files to disk.")
     public void testIncludesExcludes()
     {
         testWithProfile( "simple" );
     }
 
     @Test
+    @Ignore("Test relies on saving files to disk.")
     public void testRegexIncludesExcludes()
     {
         testWithProfile( "regex" );
     }
 
     @Test
+    @Ignore("Test relies on saving files to disk.")
     public void testPathBasedIncludesExcludes()
     {
         testWithProfile( "path" );

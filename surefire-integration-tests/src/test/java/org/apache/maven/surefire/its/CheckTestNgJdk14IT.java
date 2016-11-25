@@ -20,6 +20,7 @@ package org.apache.maven.surefire.its;
  */
 
 import org.apache.maven.surefire.its.fixture.SurefireJUnit4IntegrationTestCase;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -32,6 +33,7 @@ public class CheckTestNgJdk14IT
 {
 
     @Test
+    @Ignore("Requires test source, as annotations weren't supported in 1.4")
     public void TestNgJdk14()
         throws Exception
     {

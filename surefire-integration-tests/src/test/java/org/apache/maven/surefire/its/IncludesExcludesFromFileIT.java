@@ -22,6 +22,7 @@ package org.apache.maven.surefire.its;
 import org.apache.maven.surefire.its.fixture.OutputValidator;
 import org.apache.maven.surefire.its.fixture.SurefireJUnit4IntegrationTestCase;
 import org.apache.maven.surefire.its.fixture.SurefireLauncher;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -38,36 +39,42 @@ public class IncludesExcludesFromFileIT
     }
 
     @Test
+    @Ignore("Test relies on saving files to disk.")
     public void testSimple()
     {
         testWithProfile( "simple" );
     }
 
     @Test
+    @Ignore("Test relies on saving files to disk.")
     public void testSimpleMixed()
     {
         testWithProfile( "simple-mixed" );
     }
 
     @Test
+    @Ignore("Test relies on saving files to disk.")
     public void testRegex()
     {
         testWithProfile( "regex" );
     }
 
     @Test
+    @Ignore("Test relies on saving files to disk.")
     public void testPath()
     {
         testWithProfile( "path" );
     }
 
     @Test
+    @Ignore("Test relies on saving files to disk.")
     public void testMissingExcludes()
     {
         expectBuildFailure("missing-excludes-file", "Failed to load list from file", "no-such-excludes-file");
     }
 
     @Test
+    @Ignore("Test relies on saving files to disk.")
     public void testMissingIncludes()
     {
         expectBuildFailure( "missing-includes-file", "Failed to load list from file", "no-such-includes-file" );

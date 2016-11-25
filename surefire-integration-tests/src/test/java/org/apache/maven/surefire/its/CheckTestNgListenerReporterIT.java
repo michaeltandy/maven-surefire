@@ -31,6 +31,7 @@ import java.util.Collection;
 import static org.apache.commons.lang3.JavaVersion.JAVA_1_5;
 import static org.apache.commons.lang3.JavaVersion.JAVA_1_7;
 import static org.apache.maven.surefire.its.fixture.HelperAssertions.assumeJavaVersion;
+import org.junit.Ignore;
 import static org.junit.runners.Parameterized.Parameter;
 import static org.junit.runners.Parameterized.Parameters;
 
@@ -84,6 +85,7 @@ public class CheckTestNgListenerReporterIT
     public JavaVersion javaVersion;
 
     @Test
+    @Ignore("Writes files to disk - we don't retrieve them.")
     public void testNgListenerReporter()
     {
 
