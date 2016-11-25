@@ -150,7 +150,7 @@ public class ForkClient
         }
     }
 
-    private void setCurrentStartTime()
+    public void setCurrentStartTime()
     {
         if ( testSetStartedAt.get() == START_TIME_ZERO ) // JIT can optimize <= no JNI call
         {

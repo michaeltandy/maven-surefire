@@ -22,9 +22,6 @@ package org.apache.maven.plugin.surefire.booterclient;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.lambda.AWSLambdaClient;
 import com.amazonaws.services.lambda.invoke.LambdaInvokerFactory;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.PutObjectResult;
 import org.apache.maven.plugin.surefire.CommonReflector;
 import org.apache.maven.plugin.surefire.StartupReportConfiguration;
 import org.apache.maven.plugin.surefire.SurefireProperties;
@@ -535,6 +532,7 @@ public class ForkStarter
             ts.setSurefirePropertiesFile(sw.toString());
             ts.setTestCodeBundle(s3BundleUrl);
             ts.setArglineParameters( forkConfiguration.getArgLineParameters() );
+            ts.setForkedProcessTimeoutInSeconds(forkedProcessTimeoutInSeconds);
 
             BooterSerializer booterSerializer = new BooterSerializer( forkConfiguration );
 
@@ -602,6 +600,9 @@ public class ForkStarter
                 executeCommandLineAsCallable( cli, testProvidingInputStream, threadedStreamConsumer,
                                               new NativeStdErrStreamConsumer(), 0, closer,
                                               Charset.forName( FORK_STREAM_CHARSET_NAME ) );*/
+            currentForkClients.add( forkClient ); 
+            forkClient.setCurrentStartTime();
+            
             TestResult result = lambdaService.performTest(ts);
             if (result == null) {
                 throw new SurefireBooterForkException( "Null returned by aws lambda?" );
@@ -611,18 +612,9 @@ public class ForkStarter
                 threadedStreamConsumer.consumeLine(line);
             }
             
-            //currentForkClients.add( forkClient );
-
-            /*int result = future.call();
-
-            if ( forkClient.hadTimeout() )
-            {
+            if ( forkClient.hadTimeout() ) {
                 runResult = timeout( forkClient.getDefaultReporterFactory().getGlobalRunStatistics().getRunResult() );
             }
-            else if ( result != SUCCESS )
-            {
-                throw new SurefireBooterForkException( "Error occurred in starting fork, check output in log" );
-            }*/
         }
         /*catch ( CommandLineException e )
         {
