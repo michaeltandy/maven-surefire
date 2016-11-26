@@ -532,7 +532,11 @@ public class ForkStarter
             ts.setSurefirePropertiesFile(sw.toString());
             ts.setTestCodeBundle(s3BundleUrl);
             ts.setArglineParameters( forkConfiguration.getArgLineParameters() );
-            ts.setForkedProcessTimeoutInSeconds(forkedProcessTimeoutInSeconds);
+            if (forkedProcessTimeoutInSeconds > 0) {
+                ts.setForkedProcessTimeoutInSeconds(forkedProcessTimeoutInSeconds);
+            } else {
+                ts.setForkedProcessTimeoutInSeconds(15*60*60);
+            }
 
             BooterSerializer booterSerializer = new BooterSerializer( forkConfiguration );
 
