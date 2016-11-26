@@ -65,8 +65,9 @@ public class JUnit4RunListenerIT
     private void assertResults( OutputValidator outputValidator )
     {
         outputValidator.assertTestSuiteResults( 1, 0, 0, 0 );
-        outputValidator.getTargetFile( "runlistener-output-1.txt" ).assertFileExists();
-        outputValidator.getTargetFile( "runlistener-output-2.txt" ).assertFileExists();
+        // Tests that output files are unsupported by broadside.
+        //outputValidator.getTargetFile( "runlistener-output-1.txt" ).assertFileExists();
+        //outputValidator.getTargetFile( "runlistener-output-2.txt" ).assertFileExists();
     }
 
 
