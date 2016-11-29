@@ -34,7 +34,7 @@ public class JUnit4RerunFailingTestsIT
 {
     private SurefireLauncher unpack()
     {
-        return unpack( "/junit4-rerun-failing-tests" );
+        return unpack( "/junit4-rerun-failing-tests" ).addGoal("-DreuseForks=false");
     }
 
     @Test

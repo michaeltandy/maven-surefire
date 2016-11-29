@@ -517,6 +517,11 @@ public class ForkStarter
                             final String s3BundleUrl)
         throws SurefireBooterForkException
     {
+        if (readTestsFromInStream) {
+            throw new SurefireBooterForkException( "Reading tests from input stream requested, "
+                    + "but that's unsupported by broadside. Sorry." );
+        }
+        
         final File surefireProperties;
         final File systPropsFile;
         final TestSettings ts;
@@ -537,7 +542,7 @@ public class ForkStarter
             } else {
                 ts.setForkedProcessTimeoutInSeconds(15*60*60);
             }
-
+            
             BooterSerializer booterSerializer = new BooterSerializer( forkConfiguration );
 
             surefireProperties = booterSerializer.serialize( providerProperties, providerConfiguration,

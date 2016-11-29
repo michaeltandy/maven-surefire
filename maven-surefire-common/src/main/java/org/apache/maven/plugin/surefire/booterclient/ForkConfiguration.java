@@ -98,32 +98,15 @@ public class ForkConfiguration
         this.debug = debugEnabled;
         this.forkCount = forkCount;
         this.reuseForks = reuseForks;
+        if (reuseForks || forkCount <= 0) {
+            throw new IllegalArgumentException( "Fork reuse or zero forks requested, "
+                    + "but those are unsupported by broadside. Sorry." );
+        }
     }
 
     public Classpath getBootClasspath()
     {
         return bootClasspathConfiguration;
-    }
-
-    public static String getEffectiveForkMode( String forkMode )
-    {
-        if ( "pertest".equalsIgnoreCase( forkMode ) )
-        {
-            return FORK_ALWAYS;
-        }
-        else if ( "none".equalsIgnoreCase( forkMode ) )
-        {
-            return FORK_NEVER;
-        }
-        else if ( forkMode.equals( FORK_NEVER ) || forkMode.equals( FORK_ONCE )
-               || forkMode.equals( FORK_ALWAYS ) || forkMode.equals( FORK_PERTHREAD ) )
-        {
-            return forkMode;
-        }
-        else
-        {
-            throw new IllegalArgumentException( "Fork mode " + forkMode + " is not a legal value" );
-        }
     }
 
     /**
